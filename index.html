@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Pot Calculator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #0d1b2a 100%);
+            min-height: 100vh;
+            color: #e0e1dd;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+        }
+        h1 {
+            color: #ffd700;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(255,215,0,0.3);
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #778da9;
+            font-size: 1.1em;
+        }
+        .card {
+            background: rgba(27,38,59,0.8);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #415a77;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: #ffd700;
+            border-radius: 2px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: end;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #778da9;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #415a77;
+            border-radius: 8px;
+            background: #0d1b2a;
+            color: #e0e1dd;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .player-box {
+            background: rgba(13,27,42,0.6);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #415a77;
+            transition: all 0.3s;
+        }
+        .player-box.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255,215,0,0.2);
+        }
+        .player-box.folded {
+            opacity: 0.5;
+            border-color: #ef233c;
+        }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .player-name {
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 1.1em;
+        }
+        .fold-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .fold-checkbox input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #ef233c;
+        }
+        .boards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .board-section {
+            background: rgba(13,27,42,0.6);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #415a77;
+        }
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .board-title {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .board-pot-share {
+            color: #4ade80;
+            font-size: 0.9em;
+        }
+        .winners-section {
+            margin-top: 10px;
+        }
+        .winners-label {
+            color: #778da9;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .winners-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .winner-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #415a77;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            font-size: 0.95em;
+        }
+        .winner-chip:hover {
+            background: #778da9;
+        }
+        .winner-chip.selected {
+            background: #2d6a4f;
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+            color: #0d1b2a;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,215,0,0.4);
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #778da9;
+            color: #778da9;
+        }
+        .btn-secondary:hover {
+            border-color: #e0e1dd;
+            color: #e0e1dd;
+        }
+        .btn-group {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .results {
+            display: none;
+        }
+        .results.show {
+            display: block;
+        }
+        .pot-summary {
+            background: rgba(13,27,42,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .pot-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #415a77;
+        }
+        .pot-item:last-child {
+            border-bottom: none;
+        }
+        .pot-amount {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .payout-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .payout-table th {
+            background: #415a77;
+            color: #ffd700;
+            padding: 15px;
+            text-align: left;
+        }
+        .payout-table td {
+            padding: 15px;
+            border-bottom: 1px solid #415a77;
+        }
+        .payout-table tr:hover {
+            background: rgba(65,90,119,0.3);
+        }
+        .profit { color: #4ade80; font-weight: bold; }
+        .loss { color: #ef233c; font-weight: bold; }
+        .neutral { color: #778da9; }
+        .info-box {
+            background: rgba(45,106,79,0.3);
+            border-left: 4px solid #2d6a4f;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #90e0ef;
+        }
+        .board-split-info {
+            background: rgba(255,215,0,0.1);
+            border: 1px solid #ffd700;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>♠️ Poker Pot Calculator ♥️</h1>
+            <p class="subtitle">Calculate side pots and payouts for all-in situations with multiple boards</p>
+        </header>
+
+        <div class="card">
+            <h2>Game Setup</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Number of Players</label>
+                    <select id="numPlayers" onchange="updatePlayers()">
+                        <option value="2">2 Players</option>
+                        <option value="3" selected>3 Players</option>
+                        <option value="4">4 Players</option>
+                        <option value="5">5 Players</option>
+                        <option value="6">6 Players</option>
+                        <option value="7">7 Players</option>
+                        <option value="8">8 Players</option>
+                        <option value="9">9 Players</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Number of Boards</label>
+                    <select id="numBoards" onchange="updateBoards()">
+                        <option value="1" selected>1 Board (Standard)</option>
+                        <option value="2">2 Boards (Run it twice)</option>
+                        <option value="3">3 Boards</option>
+                        <option value="4">4 Boards</option>
+                    </select>
+                </div>
+            </div>
+            <div id="boardSplitInfo" class="board-split-info" style="display: none;">
+                Total pot will be divided equally among all boards
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Current Pot</h2>
+            <div class="info-box">
+                <p>💡 Enter the amount of money already in the pot from previous betting rounds</p>
+                <p>💡 This is separate from the all-in amounts players are putting in now</p>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="max-width: 300px;">
+                    <label>Money Already in Pot ($)</label>
+                    <input type="number" id="currentPot" min="0" value="0" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Players & Bets</h2>
+            <div class="info-box">
+                <p>💡 Enter the total amount each player has invested (called/bet) in the hand</p>
+                <p>💡 Check "Folded" if the player folded before showdown</p>
+            </div>
+            <div id="playersContainer" class="players-grid"></div>
+        </div>
+
+        <div class="card">
+            <h2>Winners by Board</h2>
+            <div class="info-box">
+                <p>💡 For each board, select which player(s) won</p>
+                <p>💡 In case of a tie, select all winning players (pot will be split)</p>
+                <p>💡 Each board competes for an equal share of the total pot</p>
+            </div>
+            <div id="boardsContainer" class="boards-container"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="calculatePots()">💰 Calculate Pots</button>
+            <button class="btn btn-secondary" onclick="resetAll()">🔄 Reset</button>
+        </div>
+
+        <div id="results" class="results card">
+            <h2>Results</h2>
+            <div id="potSummary" class="pot-summary"></div>
+            <div id="boardBreakdown"></div>
+            
+            <h3 style="color: #ffd700; margin: 20px 0 15px;">Final Payouts</h3>
+            <table class="payout-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Invested</th>
+                        <th>Won</th>
+                        <th>Net Result</th>
+                    </tr>
+                </thead>
+                <tbody id="payoutBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function init() {
+            updatePlayers();
+            updateBoards();
+        }
+
+        function updatePlayers() {
+            const num = parseInt(document.getElementById('numPlayers').value);
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= num; i++) {
+                container.innerHTML += `
+                    <div class="player-box" id="player${i}Box">
+                        <div class="player-header">
+                            <span class="player-name">Player ${i}</span>
+                            <label class="fold-checkbox">
+                                <input type="checkbox" id="player${i}Folded" onchange="toggleFold(${i})">
+                                <span>Folded</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Invested ($)</label>
+                            <input type="number" id="player${i}Bet" min="0" value="0" step="0.01">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function toggleFold(playerId) {
+            const box = document.getElementById(`player${playerId}Box`);
+            const folded = document.getElementById(`player${playerId}Folded`).checked;
+            box.classList.toggle('folded', folded);
+            box.classList.toggle('active', !folded);
+        }
+
+        function updateBoards() {
+            const numBoards = parseInt(document.getElementById('numBoards').value);
+            const numPlayers = parseInt(document.getElementById('numPlayers').value);
+            const container = document.getElementById('boardsContainer');
+            const splitInfo = document.getElementById('boardSplitInfo');
+            
+            splitInfo.style.display = numBoards > 1 ? 'block' : 'none';
+            container.innerHTML = '';
+            
+            for (let boardIdx = 0; boardIdx < numBoards; boardIdx++) {
+                let playerChips = '';
+                for (let i = 1; i <= numPlayers; i++) {
+                    playerChips += `
+                        <span class="winner-chip" 
+                              id="board${boardIdx}player${i}" 
+                              onclick="toggleWinner(${boardIdx}, ${i})">
+                            P${i}
+                        </span>
+                    `;
+                }
+                
+                container.innerHTML += `
+                    <div class="board-section">
+                        <div class="board-header">
+                            <span class="board-title">Board ${boardIdx + 1}</span>
+                            <span class="board-pot-share">${(100/numBoards).toFixed(0)}% of pot</span>
+                        </div>
+                        <div class="winners-section">
+                            <div class="winners-label">Select Winner(s):</div>
+                            <div class="winners-selector">
+                                ${playerChips}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function toggleWinner(boardIdx, playerId) {
+            const chip = document.getElementById(`board${boardIdx}player${playerId}`);
+            chip.classList.toggle('selected');
+        }
+
+        function calculateSidePots(players) {
+            const sortedPlayers = [...players]
+                .filter(p => p.bet > 0)
+                .sort((a, b) => a.bet - b.bet);
+            
+            if (sortedPlayers.length === 0) return [];
+            
+            const pots = [];
+            let currentLevel = 0;
+            
+            sortedPlayers.forEach(player => {
+                const contribution = player.bet - currentLevel;
+                if (contribution > 0) {
+                    const eligiblePlayers = sortedPlayers.filter(p => p.bet >= player.bet);
+                    const potSize = contribution * eligiblePlayers.length;
+                    
+                    pots.push({
+                        level: player.bet,
+                        size: potSize,
+                        eligible: eligiblePlayers.map(p => p.id),
+                        contribution: contribution
+                    });
+                    
+                    currentLevel = player.bet;
+                }
+            });
+            
+            return pots;
+        }
+
+        function getBoardWinners(boardIdx, eligiblePlayers) {
+            const numPlayers = parseInt(document.getElementById('numPlayers').value);
+            const winners = [];
+            
+            for (let i = 1; i <= numPlayers; i++) {
+                const chip = document.getElementById(`board${boardIdx}player${i}`);
+                if (chip && chip.classList.contains('selected') && eligiblePlayers.includes(i)) {
+                    winners.push(i);
+                }
+            }
+            
+            return winners;
+        }
+
+        function calculatePots() {
+            const numPlayers = parseInt(document.getElementById('numPlayers').value);
+            const numBoards = parseInt(document.getElementById('numBoards').value);
+            const currentPot = parseFloat(document.getElementById('currentPot').value) || 0;
+            const players = [];
+            
+            // Collect player data
+            for (let i = 1; i <= numPlayers; i++) {
+                const bet = parseFloat(document.getElementById(`player${i}Bet`).value) || 0;
+                const folded = document.getElementById(`player${i}Folded`).checked;
+                players.push({ id: i, bet: bet, folded: folded });
+            }
+            
+            const allInTotal = players.reduce((sum, p) => sum + p.bet, 0);
+            const totalPot = allInTotal + currentPot;
+            const boardShare = totalPot / numBoards;
+            
+            // Initialize winnings
+            const winnings = {};
+            const boardDetails = [];
+            players.forEach(p => winnings[p.id] = 0);
+            
+            // Process each board
+            for (let boardIdx = 0; boardIdx < numBoards; boardIdx++) {
+                const sidePots = calculateSidePots(players);
+                const boardWinnings = {};
+                players.forEach(p => boardWinnings[p.id] = 0);
+                
+                // Distribute current pot portion to board winners
+                const currentPotShare = currentPot / numBoards;
+                const activePlayers = players.filter(p => !p.folded).map(p => p.id);
+                const boardWinners = getBoardWinners(boardIdx, activePlayers);
+                
+                if (boardWinners.length > 0) {
+                    const winnerShare = currentPotShare / boardWinners.length;
+                    boardWinners.forEach(id => {
+                        boardWinnings[id] += winnerShare;
+                    });
+                } else if (activePlayers.length > 0) {
+                    // Split among all active if no winners selected
+                    const share = currentPotShare / activePlayers.length;
+                    activePlayers.forEach(id => {
+                        boardWinnings[id] += share;
+                    });
+                }
+                
+                // Distribute each side pot for this board
+                sidePots.forEach(pot => {
+                    // Only non-folded players can win
+                    const eligibleActive = pot.eligible.filter(id => {
+                        const player = players.find(p => p.id === id);
+                        return !player.folded;
+                    });
+                    
+                    if (eligibleActive.length === 0) {
+                        // Return to eligible players
+                        const share = (pot.size / numBoards) / pot.eligible.length;
+                        pot.eligible.forEach(id => {
+                            boardWinnings[id] += share;
+                        });
+                        return;
+                    }
+                    
+                    // Get winners for this board
+                    const potWinners = getBoardWinners(boardIdx, eligibleActive);
+                    
+                    if (potWinners.length === 0) {
+                        // Split among all eligible active
+                        const share = (pot.size / numBoards) / eligibleActive.length;
+                        eligibleActive.forEach(id => {
+                            boardWinnings[id] += share;
+                        });
+                    } else {
+                        // Split among winners
+                        const share = (pot.size / numBoards) / potWinners.length;
+                        potWinners.forEach(id => {
+                            boardWinnings[id] += share;
+                        });
+                    }
+                });
+                
+                // Add to total winnings
+                Object.keys(boardWinnings).forEach(id => {
+                    winnings[id] += boardWinnings[id];
+                });
+                
+                boardDetails.push({
+                    board: boardIdx + 1,
+                    winnings: {...boardWinnings}
+                });
+            }
+            
+            displayResults(players, totalPot, boardShare, winnings, boardDetails, currentPot, allInTotal);
+        }
+
+        function displayResults(players, totalPot, boardShare, winnings, boardDetails, currentPot, allInTotal) {
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('potSummary');
+            const breakdownDiv = document.getElementById('boardBreakdown');
+            const payoutBody = document.getElementById('payoutBody');
+            
+            // Pot summary
+            let summaryHTML = '';
+            
+            if (currentPot > 0) {
+                summaryHTML += `
+                    <div class="pot-item">
+                        <span>Current Pot (previous rounds)</span>
+                        <span class="pot-amount">$${currentPot.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+            
+            if (allInTotal > 0) {
+                summaryHTML += `
+                    <div class="pot-item">
+                        <span>All-in Contributions</span>
+                        <span class="pot-amount">$${allInTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+            
+            summaryHTML += `
+                <div class="pot-item" style="border-top: 2px solid #415a77; margin-top: 10px; padding-top: 12px;">
+                    <span><strong>Total Pot</strong></span>
+                    <span class="pot-amount">$${totalPot.toFixed(2)}</span>
+                </div>
+            `;
+            
+            if (boardDetails.length > 1) {
+                summaryHTML += `
+                    <div class="pot-item">
+                        <span>Each board plays for</span>
+                        <span class="pot-amount">$${boardShare.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+            
+            summaryDiv.innerHTML = summaryHTML;
+            
+            // Board breakdown for multiple boards
+            if (boardDetails.length > 1) {
+                let breakdownHTML = '<h3 style="color: #ffd700; margin: 20px 0 15px;">Per Board Breakdown</h3>';
+                boardDetails.forEach(board => {
+                    const boardTotal = Object.values(board.winnings).reduce((a, b) => a + b, 0);
+                    breakdownHTML += `
+                        <div class="pot-item">
+                            <div>
+                                <strong>Board ${board.board}</strong>
+                                <div style="font-size: 0.85em; color: #778da9;">
+                                    ${Object.entries(board.winnings)
+                                        .filter(([_, amount]) => amount > 0)
+                                        .map(([id, amount]) => `P${id}: $${amount.toFixed(2)}`)
+                                        .join(', ') || 'No winners selected'}
+                                </div>
+                            </div>
+                            <span class="pot-amount">$${boardTotal.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+                breakdownDiv.innerHTML = breakdownHTML;
+            } else {
+                breakdownDiv.innerHTML = '';
+            }
+            
+            // Payout table
+            payoutBody.innerHTML = '';
+            players.forEach(p => {
+                const won = winnings[p.id] || 0;
+                const net = won - p.bet;
+                let netClass, netSign;
+                
+                if (net > 0) {
+                    netClass = 'profit';
+                    netSign = '+';
+                } else if (net < 0) {
+                    netClass = 'loss';
+                    netSign = '';
+                } else {
+                    netClass = 'neutral';
+                    netSign = '';
+                }
+                
+                const status = p.folded ? ' (folded)' : '';
+                
+                payoutBody.innerHTML += `
+                    <tr>
+                        <td><strong>Player ${p.id}</strong>${status}</td>
+                        <td>$${p.bet.toFixed(2)}</td>
+                        <td>$${won.toFixed(2)}</td>
+                        <td class="${netClass}">${netSign}$${Math.abs(net).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            resultsDiv.classList.add('show');
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetAll() {
+            document.getElementById('numPlayers').value = '3';
+            document.getElementById('numBoards').value = '1';
+            document.getElementById('currentPot').value = '0';
+            updatePlayers();
+            updateBoards();
+            document.getElementById('results').classList.remove('show');
+        }
+
+        init();
+    </script>
+</body>
+</html>
