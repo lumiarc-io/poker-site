@@ -573,9 +573,14 @@
 
         /* ── Responsive ── */
         @media (max-width: 580px) {
-            .card { padding: 20px 16px; }
+            body { padding: 16px 12px 60px; }
+            .card { padding: 18px 14px; }
             h1 { letter-spacing: -0.5px; }
             .btn { padding: 12px 22px; }
+            .payout-table th { padding: 10px 12px; font-size: 0.7em; }
+            .payout-table td { padding: 12px 12px; font-size: 0.88em; }
+            .mini-avatar { width: 26px; height: 26px; font-size: 0.72em; }
+            .stat-val { font-size: 1.3em; }
         }
     </style>
 </head>
@@ -622,7 +627,7 @@
                 </select>
             </div>
             <div class="form-group" style="max-width:220px">
-                <label>Chips Already in Pot</label>
+                <label>Current Pot</label>
                 <div class="input-prefix">
                     <input type="number" id="currentPot" min="0" value="0" step="0.01">
                 </div>
@@ -692,7 +697,8 @@
         </div>
         <div id="statGrid" class="stat-grid"></div>
         <div id="potBreakdown" class="pot-breakdown hidden"></div>
-        <table class="payout-table">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table class="payout-table" style="min-width:340px;">
             <thead>
                 <tr>
                     <th>Player</th>
@@ -703,6 +709,7 @@
             </thead>
             <tbody id="payoutBody"></tbody>
         </table>
+        </div>
     </div>
 
 </div><!-- /container -->
