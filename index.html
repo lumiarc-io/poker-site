@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Pot Calculator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #080d14;
+            --bg-card: #0f1623;
+            --bg-raised: #161f30;
+            --bg-input: #0c1220;
+            --border: #1e2d45;
+            --border-hi: #2a3f5f;
+            --gold: #e8a000;
+            --gold-lt: #f5c842;
+            --gold-glow: rgba(232,160,0,0.18);
+            --gold-dim: rgba(232,160,0,0.10);
+            --green: #22c55e;
+            --green-dim: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-dim: rgba(239,68,68,0.12);
+            --blue: #3b82f6;
+            --blue-dim: rgba(59,130,246,0.12);
+            --text: #dde4f0;
+            --text-dim: #7d93b2;
+            --text-muted: #4a6080;
+            --radius: 14px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            padding: 24px 16px 60px;
+            background-image:
+                radial-gradient(ellipse 60% 40% at 15% 0%, rgba(232,160,0,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 85% 100%, rgba(59,130,246,0.04) 0%, transparent 60%);
+        }
+
+        .container { max-width: 1060px; margin: 0 auto; }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            padding: 44px 20px 36px;
+        }
+
+        .suits {
+            font-size: 1.4em;
+            letter-spacing: 18px;
+            opacity: 0.22;
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3em);
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #e8a000 10%, #f5c842 55%, #e8a000 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.97em;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 18px;
+        }
+
+        /* ── Section header ── */
+        .sec-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .step-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--gold);
+            color: #0a0d12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.9em;
+            flex-shrink: 0;
+            box-shadow: 0 0 14px var(--gold-glow);
+        }
+
+        .sec-head h2 {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .sec-head p {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── Form ── */
+        .form-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 130px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 0.76em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-dim);
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.97em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%234a6080' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+            cursor: pointer;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-dim);
+        }
+
+        /* ── Dollar prefix input ── */
+        .input-prefix {
+            position: relative;
+        }
+
+        .input-prefix::before {
+            content: '$';
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.95em;
+            pointer-events: none;
+        }
+
+        .input-prefix input {
+            padding-left: 26px;
+        }
+
+        /* ── Players grid ── */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 12px;
+        }
+
+        .player-box {
+            background: var(--bg-raised);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color 0.2s, opacity 0.2s;
+            position: relative;
+        }
+
+        .player-box.folded {
+            opacity: 0.45;
+            border-color: var(--red) !important;
+        }
+
+        .player-box:focus-within {
+            border-color: var(--border-hi);
+        }
+
+        .player-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 13px;
+        }
+
+        .player-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95em;
+            flex-shrink: 0;
+            border: 2px solid;
+            transition: all 0.2s;
+        }
+
+        .player-box.folded .player-avatar {
+            background: var(--red-dim) !important;
+            border-color: var(--red) !important;
+            color: var(--red) !important;
+        }
+
+        .player-name {
+            font-weight: 700;
+            font-size: 0.95em;
+            color: var(--text);
+        }
+
+        .fold-toggle {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 10px;
+            cursor: pointer;
+            user-select: none;
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+
+        .fold-toggle input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--red);
+            cursor: pointer;
+        }
+
+        /* ── Info note ── */
+        .info-note {
+            background: var(--blue-dim);
+            border-left: 3px solid var(--blue);
+            padding: 11px 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+            font-size: 0.84em;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 30px;
+            font-size: 0.97em;
+            font-weight: 700;
+            border-radius: 11px;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+            letter-spacing: 0.2px;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #e8a000, #c97a00);
+            color: #0a0d12;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(232,160,0,0.35);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+        }
+
+        .btn-green:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(34,197,94,0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1.5px solid var(--border-hi);
+            color: var(--text-dim);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--text-dim);
+            color: var(--text);
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin: 26px 0;
+            flex-wrap: wrap;
+        }
+
+        /* ── Hidden sections ── */
+        .hidden { display: none !important; }
+
+        /* ── Pot cards ── */
+        .pot-card {
+            background: var(--bg-raised);
+            border: 1.5px solid var(--border);
+            border-radius: 13px;
+            padding: 20px;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .pot-card:last-child { margin-bottom: 0; }
+
+        .pot-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .pot-label {
+            font-weight: 800;
+            font-size: 1.05em;
+            color: var(--gold);
+        }
+
+        .pot-amount {
+            background: var(--gold-dim);
+            border: 1px solid rgba(232,160,0,0.35);
+            border-radius: 8px;
+            padding: 4px 13px;
+            color: var(--gold-lt);
+            font-weight: 800;
+            font-size: 1em;
+            white-space: nowrap;
+        }
+
+        .pot-eligible-line {
+            font-size: 0.78em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        /* ── Board winner row ── */
+        .board-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .board-row-label {
+            font-size: 0.78em;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 64px;
+            flex-shrink: 0;
+        }
+
+        .chips-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            flex: 1;
+        }
+
+        /* ── Winner chips ── */
+        .winner-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 13px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border-hi);
+            background: var(--bg-card);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s;
+            font-size: 0.84em;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .winner-chip:hover {
+            border-color: #888;
+            color: var(--text);
+        }
+
+        .winner-chip.selected {
+            border-color: var(--gold) !important;
+            color: var(--gold) !important;
+            background: var(--gold-dim) !important;
+        }
+
+        .winner-chip.auto-win {
+            border-color: var(--green) !important;
+            color: var(--green) !important;
+            background: var(--green-dim) !important;
+            cursor: default;
+        }
+
+        .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .chip-amt {
+            font-size: 0.85em;
+            opacity: 0.65;
+        }
+
+        /* ── Result stats ── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 26px;
+        }
+
+        .stat-box {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 18px 16px;
+            text-align: center;
+        }
+
+        .stat-val {
+            display: block;
+            font-size: 1.55em;
+            font-weight: 900;
+            color: var(--gold);
+            line-height: 1.1;
+        }
+
+        .stat-lbl {
+            display: block;
+            font-size: 0.72em;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* ── Pot breakdown (inside results) ── */
+        .pot-breakdown {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 18px;
+            margin-bottom: 22px;
+        }
+
+        .pot-breakdown h3 {
+            font-size: 0.78em;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9em;
+        }
+
+        .breakdown-row:last-child { border-bottom: none; }
+
+        .breakdown-name { color: var(--text-dim); }
+        .breakdown-winners { font-size: 0.82em; color: var(--text-muted); }
+        .breakdown-amt { color: var(--gold-lt); font-weight: 700; }
+
+        /* ── Payout table ── */
+        .payout-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 11px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .payout-table th {
+            background: var(--bg-raised);
+            color: var(--text-muted);
+            padding: 13px 18px;
+            text-align: left;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .payout-table td {
+            padding: 15px 18px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.94em;
+        }
+
+        .payout-table tbody tr:last-child td { border-bottom: none; }
+
+        .payout-table tbody tr:hover td {
+            background: rgba(255,255,255,0.015);
+        }
+
+        .player-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mini-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.78em;
+            flex-shrink: 0;
+            border: 1.5px solid;
+        }
+
+        .profit { color: var(--green); font-weight: 700; }
+        .loss   { color: var(--red);   font-weight: 700; }
+        .neutral{ color: var(--text-muted); font-weight: 700; }
+
+        /* ── Responsive ── */
+        @media (max-width: 580px) {
+            .card { padding: 20px 16px; }
+            h1 { letter-spacing: -0.5px; }
+            .btn { padding: 12px 22px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header>
+        <span class="suits">♠ ♥ ♦ ♣</span>
+        <h1>Poker Pot Calculator</h1>
+        <p class="subtitle">Side pots &amp; payouts for all-in situations</p>
+    </header>
+
+    <!-- Step 1: Setup -->
+    <div class="card">
+        <div class="sec-head">
+            <div class="step-badge">1</div>
+            <div>
+                <h2>Game Setup</h2>
+                <p>Players, boards, and any chips already in the pot</p>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Players</label>
+                <select id="numPlayers" onchange="onSetupChange()">
+                    <option value="2">2 Players</option>
+                    <option value="3" selected>3 Players</option>
+                    <option value="4">4 Players</option>
+                    <option value="5">5 Players</option>
+                    <option value="6">6 Players</option>
+                    <option value="7">7 Players</option>
+                    <option value="8">8 Players</option>
+                    <option value="9">9 Players</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Boards</label>
+                <select id="numBoards" onchange="onSetupChange()">
+                    <option value="1" selected>1 Board</option>
+                    <option value="2">2 Boards (Run it twice)</option>
+                    <option value="3">3 Boards</option>
+                    <option value="4">4 Boards</option>
+                </select>
+            </div>
+            <div class="form-group" style="max-width:220px">
+                <label>Chips Already in Pot</label>
+                <div class="input-prefix">
+                    <input type="number" id="currentPot" min="0" value="0" step="0.01">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Players -->
+    <div class="card">
+        <div class="sec-head">
+            <div class="step-badge">2</div>
+            <div>
+                <h2>Players &amp; Bets</h2>
+                <p>Total amount each player has put in this hand</p>
+            </div>
+        </div>
+        <div class="info-note">
+            Enter the total amount each player invested (called / bet) this hand. Mark anyone who folded before showdown.
+        </div>
+        <div id="playersContainer" class="players-grid"></div>
+    </div>
+
+    <!-- Calculate button -->
+    <div class="btn-group">
+        <button class="btn btn-gold" onclick="computePots()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Calculate Side Pots
+        </button>
+        <button class="btn btn-ghost" onclick="resetAll()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Reset
+        </button>
+    </div>
+
+    <!-- Step 3: Winners per pot -->
+    <div id="winnersSection" class="hidden">
+        <div class="card">
+            <div class="sec-head">
+                <div class="step-badge">3</div>
+                <div>
+                    <h2>Select Winners</h2>
+                    <p>Players listed largest stack → smallest — choose winner(s) for each pot</p>
+                </div>
+            </div>
+            <div class="info-note">
+                Larger-stack players appear first. They may be eligible for side pots that smaller stacks cannot win. Tap multiple chips to split a pot. A player shown in <span style="color:var(--green)">green</span> is the sole eligible player and wins automatically.
+            </div>
+            <div id="potsContainer"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-green" onclick="calculateResults()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Calculate Payouts
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 4: Results -->
+    <div id="resultsSection" class="hidden card">
+        <div class="sec-head">
+            <div class="step-badge">4</div>
+            <div>
+                <h2>Final Payouts</h2>
+                <p>How the pot distributes across all players</p>
+            </div>
+        </div>
+        <div id="statGrid" class="stat-grid"></div>
+        <div id="potBreakdown" class="pot-breakdown hidden"></div>
+        <table class="payout-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Invested</th>
+                    <th>Won</th>
+                    <th>Net</th>
+                </tr>
+            </thead>
+            <tbody id="payoutBody"></tbody>
+        </table>
+    </div>
+
+</div><!-- /container -->
+
+<script>
+// ─── Player color palette ───────────────────────────────────────────────────
+const COLORS = [
+    { bg: 'rgba(99,102,241,0.18)',  border: '#6366f1', text: '#818cf8' },
+    { bg: 'rgba(236,72,153,0.15)',  border: '#ec4899', text: '#f472b6' },
+    { bg: 'rgba(245,158,11,0.15)',  border: '#f59e0b', text: '#fbbf24' },
+    { bg: 'rgba(20,184,166,0.15)',  border: '#14b8a6', text: '#2dd4bf' },
+    { bg: 'rgba(239,68,68,0.15)',   border: '#ef4444', text: '#f87171' },
+    { bg: 'rgba(132,204,22,0.15)',  border: '#84cc16', text: '#a3e635' },
+    { bg: 'rgba(6,182,212,0.15)',   border: '#06b6d4', text: '#22d3ee' },
+    { bg: 'rgba(168,85,247,0.15)',  border: '#a855f7', text: '#c084fc' },
+    { bg: 'rgba(251,146,60,0.15)',  border: '#fb923c', text: '#fdba74' },
+];
+
+function playerColor(idx) {
+    return COLORS[idx % COLORS.length];
+}
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let playerData = [];
+let computedPots = [];
+let autoReturnPots = []; // pots with only 1 (or 0) eligible player — returned automatically
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+function init() {
+    renderPlayers();
+}
+
+function onSetupChange() {
+    renderPlayers();
+    hide('winnersSection');
+    hide('resultsSection');
+}
+
+// ─── Render players ──────────────────────────────────────────────────────────
+function renderPlayers() {
+    const num = parseInt(document.getElementById('numPlayers').value);
+    const container = document.getElementById('playersContainer');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= num; i++) {
+        const c = playerColor(i - 1);
+        container.innerHTML += `
+        <div class="player-box" id="pbox${i}">
+            <div class="player-top">
+                <div class="player-avatar" id="pavatar${i}" style="background:${c.bg};border-color:${c.border};color:${c.text}">
+                    P${i}
+                </div>
+                <span class="player-name">Player ${i}</span>
+            </div>
+            <div class="input-prefix">
+                <input type="number" id="p${i}bet" min="0" value="0" step="0.01" placeholder="0">
+            </div>
+            <label class="fold-toggle">
+                <input type="checkbox" id="p${i}fold" onchange="toggleFold(${i})">
+                Folded
+            </label>
+        </div>`;
+    }
+}
+
+function toggleFold(i) {
+    const folded = document.getElementById(`p${i}fold`).checked;
+    document.getElementById(`pbox${i}`).classList.toggle('folded', folded);
+    hide('winnersSection');
+    hide('resultsSection');
+}
+
+// ─── Calculate side pots ─────────────────────────────────────────────────────
+function calcSidePots(players) {
+    const bettors = players.filter(p => p.bet > 0).sort((a, b) => a.bet - b.bet);
+    if (!bettors.length) return [];
+
+    const pots = [];
+    let level = 0;
+
+    bettors.forEach(player => {
+        const contrib = player.bet - level;
+        if (contrib <= 0) return;
+
+        // Everyone who put in at least this much is eligible
+        const eligible = players
+            .filter(p => p.bet >= player.bet)
+            .sort((a, b) => b.bet - a.bet); // largest → smallest
+
+        pots.push({
+            name: pots.length === 0 ? 'Main Pot' : `Side Pot ${pots.length}`,
+            size: contrib * eligible.length,
+            eligible: eligible.map(p => p.id),
+            level: player.bet,
+        });
+
+        level = player.bet;
+    });
+
+    return pots;
+}
+
+// ─── Compute pots & show winner UI ──────────────────────────────────────────
+function computePots() {
+    const num = parseInt(document.getElementById('numPlayers').value);
+    const existing = parseFloat(document.getElementById('currentPot').value) || 0;
+
+    playerData = [];
+    for (let i = 1; i <= num; i++) {
+        playerData.push({
+            id: i,
+            bet: parseFloat(document.getElementById(`p${i}bet`).value) || 0,
+            folded: document.getElementById(`p${i}fold`).checked,
+        });
+    }
+
+    computedPots = calcSidePots(playerData);
+
+    // Merge existing pot into main pot, or create standalone entry
+    if (existing > 0) {
+        if (computedPots.length > 0) {
+            // Merge existing chips into main pot and expand eligibility to all non-folded players
+            const allActive = [...playerData]
+                .filter(p => !p.folded)
+                .sort((a, b) => b.bet - a.bet);
+
+            computedPots[0].size += existing;
+            computedPots[0].eligible = allActive.map(p => p.id);
+        } else {
+            // No bets — only the existing pot exists
+            const allActive = [...playerData]
+                .filter(p => !p.folded)
+                .sort((a, b) => b.bet - a.bet);
+
+            computedPots = [{
+                name: 'Main Pot',
+                size: existing,
+                eligible: allActive.map(p => p.id),
+                level: 0,
+            }];
+        }
+    }
+
+    if (!computedPots.length) {
+        alert('Enter bet amounts for at least one player.');
+        return;
+    }
+
+    // Strip pots where only 1 (or 0) non-folded player is eligible — they win automatically
+    autoReturnPots = [];
+    computedPots = computedPots.filter(pot => {
+        const activElig = pot.eligible.filter(id => !playerData.find(x => x.id === id).folded);
+        if (activElig.length <= 1) {
+            autoReturnPots.push({ ...pot, soloWinner: activElig[0] });
+            return false;
+        }
+        return true;
+    });
+
+    renderWinners();
+    show('winnersSection');
+    hide('resultsSection');
+    document.getElementById('winnersSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── Render winners section ──────────────────────────────────────────────────
+function renderWinners() {
+    const numBoards = parseInt(document.getElementById('numBoards').value);
+    const container = document.getElementById('potsContainer');
+    container.innerHTML = '';
+
+    computedPots.forEach((pot, potIdx) => {
+        // Non-folded eligible players, sorted by player number
+        const activElig = pot.eligible
+            .filter(id => !playerData.find(x => x.id === id).folded)
+            .sort((a, b) => a - b);
+
+        const autoWin = activElig.length === 1;
+        const eligNames = pot.eligible
+            .map(id => {
+                const p = playerData.find(x => x.id === id);
+                return `P${id} ($${p.bet.toFixed(0)})`;
+            })
+            .join(' › ');
+
+        let boardRows = '';
+        for (let b = 0; b < numBoards; b++) {
+            const chips = activElig.map(id => {
+                const p = playerData.find(x => x.id === id);
+                const c = playerColor(p.id - 1);
+                const cls = autoWin ? 'winner-chip auto-win' : 'winner-chip';
+                const onclick = autoWin ? '' : `onclick="toggleWinner(${potIdx},${b},${id})"`;
+                return `
+                <span class="${cls}" id="wc_${potIdx}_${b}_${id}" ${onclick}
+                      style="${autoWin ? '' : `--chip-border:${c.border}`}">
+                    <span class="chip-dot" style="background:${c.text}"></span>
+                    P${id}
+                    <span class="chip-amt">$${p.bet.toFixed(0)}</span>
+                    ${autoWin ? '<span style="font-size:0.8em;opacity:0.7">✓ auto</span>' : ''}
+                </span>`;
+            }).join('');
+
+            const noPlayersMsg = activElig.length === 0
+                ? '<span style="color:var(--text-muted);font-size:0.84em">⚠ All eligible players folded</span>'
+                : '';
+
+            const label = numBoards > 1 ? `Board ${b + 1}` : 'Winner';
+            boardRows += `
+            <div class="board-row">
+                <div class="board-row-label">${label}</div>
+                <div class="chips-row">${chips}${noPlayersMsg}</div>
+            </div>`;
+        }
+
+        container.innerHTML += `
+        <div class="pot-card">
+            <div class="pot-card-head">
+                <div>
+                    <div class="pot-label">${pot.name}</div>
+                    <div class="pot-eligible-line">Eligible (largest → smallest): ${eligNames}</div>
+                </div>
+                <div class="pot-amount">$${pot.size.toFixed(2)}</div>
+            </div>
+            ${boardRows}
+        </div>`;
+
+        // Auto-select if sole eligible
+        if (autoWin) {
+            for (let b = 0; b < numBoards; b++) {
+                const el = document.getElementById(`wc_${potIdx}_${b}_${activElig[0]}`);
+                if (el) el.classList.add('selected');
+            }
+        }
+    });
+}
+
+function toggleWinner(potIdx, boardIdx, playerId) {
+    const el = document.getElementById(`wc_${potIdx}_${boardIdx}_${playerId}`);
+    if (!el) return;
+    const select = !el.classList.contains('selected');
+
+    // Sync across all pots for the same board
+    computedPots.forEach((pot, pIdx) => {
+        if (!pot.eligible.includes(playerId)) return;
+        const chip = document.getElementById(`wc_${pIdx}_${boardIdx}_${playerId}`);
+        if (chip && !chip.classList.contains('auto-win')) {
+            chip.classList.toggle('selected', select);
+        }
+    });
+}
+
+// ─── Calculate payouts ───────────────────────────────────────────────────────
+function calculateResults() {
+    const numBoards = parseInt(document.getElementById('numBoards').value);
+    const winnings = {};
+    playerData.forEach(p => (winnings[p.id] = 0));
+
+    const breakdownRows = [];
+
+    // Auto-return pots with a single eligible player
+    autoReturnPots.forEach(pot => {
+        if (pot.soloWinner !== undefined) {
+            winnings[pot.soloWinner] = (winnings[pot.soloWinner] || 0) + pot.size;
+            breakdownRows.push({ name: pot.name, size: pot.size, winners: `P${pot.soloWinner} (returned)` });
+        } else {
+            // All eligible folded — split among eligible
+            const share = pot.size / pot.eligible.length;
+            pot.eligible.forEach(id => { winnings[id] = (winnings[id] || 0) + share; });
+            breakdownRows.push({ name: pot.name, size: pot.size, winners: 'returned (all folded)' });
+        }
+    });
+
+    computedPots.forEach((pot, potIdx) => {
+        const activElig = pot.eligible.filter(id => {
+            const p = playerData.find(x => x.id === id);
+            return !p.folded;
+        });
+
+        const perBoard = pot.size / numBoards;
+        const boardWinnerLabels = [];
+
+        for (let b = 0; b < numBoards; b++) {
+            let selected = activElig.filter(id => {
+                const el = document.getElementById(`wc_${potIdx}_${b}_${id}`);
+                return el && el.classList.contains('selected');
+            });
+
+            // Fallback: if none selected, split among all active eligible
+            const recipients = selected.length > 0 ? selected : activElig;
+
+            if (recipients.length > 0) {
+                const share = perBoard / recipients.length;
+                recipients.forEach(id => (winnings[id] += share));
+                boardWinnerLabels.push(
+                    (numBoards > 1 ? `Bd${b + 1}: ` : '') +
+                    recipients.map(id => `P${id}`).join(' & ')
+                );
+            } else {
+                // All eligible folded — return chips to eligible (edge case)
+                const fallback = pot.eligible;
+                const share = perBoard / fallback.length;
+                fallback.forEach(id => (winnings[id] += share));
+                boardWinnerLabels.push('returned');
+            }
+        }
+
+        breakdownRows.push({
+            name: pot.name,
+            size: pot.size,
+            winners: boardWinnerLabels.join(' | '),
+        });
+    });
+
+    displayResults(winnings, breakdownRows);
+}
+
+// ─── Display results ─────────────────────────────────────────────────────────
+function displayResults(winnings, breakdownRows) {
+    const numBoards = parseInt(document.getElementById('numBoards').value);
+    const totalPot = computedPots.reduce((s, p) => s + p.size, 0);
+    const totalInvested = playerData.reduce((s, p) => s + p.bet, 0);
+
+    // Stats
+    document.getElementById('statGrid').innerHTML = `
+    <div class="stat-box">
+        <span class="stat-val">$${totalPot.toFixed(2)}</span>
+        <span class="stat-lbl">Total Pot</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-val">${computedPots.length}</span>
+        <span class="stat-lbl">Pot${computedPots.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-val">${numBoards}</span>
+        <span class="stat-lbl">Board${numBoards !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-val">${playerData.length}</span>
+        <span class="stat-lbl">Players</span>
+    </div>`;
+
+    // Breakdown
+    const bd = document.getElementById('potBreakdown');
+    if (breakdownRows.length > 1 || numBoards > 1) {
+        bd.innerHTML = `<h3>Pot Breakdown</h3>` + breakdownRows.map(r => `
+        <div class="breakdown-row">
+            <div>
+                <div class="breakdown-name">${r.name}</div>
+                <div class="breakdown-winners">${r.winners}</div>
+            </div>
+            <div class="breakdown-amt">$${r.size.toFixed(2)}</div>
+        </div>`).join('');
+        show('potBreakdown');
+    } else {
+        hide('potBreakdown');
+    }
+
+    // Payout table
+    const body = document.getElementById('payoutBody');
+    body.innerHTML = '';
+
+    // Sort by won desc for display
+    const sorted = [...playerData].sort((a, b) => (winnings[b.id] || 0) - (winnings[a.id] || 0));
+
+    sorted.forEach(p => {
+        const won = winnings[p.id] || 0;
+        const net = won - p.bet;
+        const c = playerColor(p.id - 1);
+        const netClass = net > 0.005 ? 'profit' : net < -0.005 ? 'loss' : 'neutral';
+        const netStr = net > 0.005
+            ? `+$${net.toFixed(2)}`
+            : net < -0.005
+                ? `−$${Math.abs(net).toFixed(2)}`
+                : '—';
+        const foldedTag = p.folded
+            ? `<span style="font-size:0.75em;color:var(--red);margin-left:6px">(folded)</span>`
+            : '';
+
+        body.innerHTML += `
+        <tr>
+            <td>
+                <div class="player-cell">
+                    <div class="mini-avatar" style="background:${c.bg};border-color:${c.border};color:${c.text}">
+                        P${p.id}
+                    </div>
+                    Player ${p.id}${foldedTag}
+                </div>
+            </td>
+            <td>$${p.bet.toFixed(2)}</td>
+            <td>$${won.toFixed(2)}</td>
+            <td class="${netClass}">${netStr}</td>
+        </tr>`;
+    });
+
+    show('resultsSection');
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── Reset ───────────────────────────────────────────────────────────────────
+function resetAll() {
+    document.getElementById('numPlayers').value = '3';
+    document.getElementById('numBoards').value = '1';
+    document.getElementById('currentPot').value = '0';
+    renderPlayers();
+    hide('winnersSection');
+    hide('resultsSection');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+init();
+</script>
+</body>
+</html>
